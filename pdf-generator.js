@@ -1,4 +1,5 @@
-// pdf-generator.js - Génération de l'agenda au format PDF
+// pdf-generator.js - Génération Premium "Tournesol"
+// Basé sur le modèle Planificateur Tournesol 2025-2026
 
 document.getElementById('btn-generate-pdf').addEventListener('click', async () => {
     try {
@@ -7,199 +8,189 @@ document.getElementById('btn-generate-pdf').addEventListener('click', async () =
             return;
         }
 
-        // Vérification de jsPDF
         if (!window.jspdf || !window.jspdf.jsPDF) {
-            alert("La bibliothèque PDF (jsPDF) n'est pas chargée. Veuillez vérifier votre connexion.");
+            alert("jsPDF non chargé.");
             return;
         }
 
-        const jsPDF = window.jspdf.jsPDF;
+        const { jsPDF } = window.jspdf;
         const config = window.agendaData.config;
-        const orientation = config.orientation === 'landscape' ? 'l' : 'p';
-
-        const doc = new jsPDF({
-            orientation: orientation,
-            unit: 'mm',
-            format: 'a4'
-        });
-
-        // Génération de l'agenda via Calendar (défini dans calendar.js)
-        const agenda = Calendar.generateFullAgenda(window.agendaData);
-        // Filtrer pour ne garder que les jours de semaine
-        const weekdayAgenda = agenda.filter(d => !d.isWeekend);
-        const weeks = Calendar.groupAgendaByWeek(weekdayAgenda, config.daysPerPage || 5);
-
-        if (weeks.length === 0) {
-            alert("Veuillez d'abord configurer les dates de l'agenda (début et fin).");
-            return;
-        }
+        const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 15;
-        const contentWidth = pageWidth - (margin * 2);
+        const margin = 10;
 
-        // --- Page de Couverture ---
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(32);
-        doc.setTextColor(25, 127, 230);
-        doc.text("AGENDA SCOLAIRE", pageWidth / 2, pageHeight / 3, { align: "center" });
-
-        doc.setFontSize(20);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100, 100, 100);
-        doc.text(config.year || "Année Scolaire", pageWidth / 2, pageHeight / 3 + 15, { align: "center" });
-
-        // --- Légende sur la couverture ---
-        const colorEntries = Object.entries(window.agendaData.colors || {});
-        if (colorEntries.length > 0) {
-            let ly = pageHeight / 2 + 10;
-            doc.setFontSize(14);
-            doc.setTextColor(51, 51, 51);
-            doc.text("Légende des catégories :", margin, ly);
-            ly += 8;
-
-            let lx = margin;
-            colorEntries.forEach(([name, color], i) => {
-                const r = parseInt(color.slice(1, 3), 16) || 200;
-                const g = parseInt(color.slice(3, 5), 16) || 200;
-                const b = parseInt(color.slice(5, 7), 16) || 200;
-
-                doc.setFillColor(r, g, b);
-                doc.rect(lx, ly - 4, 8, 5, 'F');
-                doc.setFontSize(10);
-                doc.text(name, lx + 10, ly);
-
-                lx += 50;
-                if ((i + 1) % 3 === 0) { lx = margin; ly += 8; }
-            });
-        }
-
-        // --- Génération des pages d'agenda ---
-        weeks.forEach((week, weekIndex) => {
-            doc.addPage();
-
-            const firstDay = week[0].date;
-            const lastDay = week[week.length - 1].date;
-            const weekTitle = `Période du ${firstDay.toLocaleDateString('fr-FR')} au ${lastDay.toLocaleDateString('fr-FR')}`;
-
-            // En-tête de page
-            doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(25, 127, 230);
-            doc.text(weekTitle, margin, 15);
-
-            // Ligne de séparation
-            doc.setDrawColor(25, 127, 230);
-            doc.setLineWidth(0.5);
-            doc.line(margin, 18, pageWidth - margin, 18);
-
-            const daysInPage = week.length;
-            const headerOverallHeight = 22;
-            const footerHeight = 10;
-            const availablePageHeight = pageHeight - headerOverallHeight - footerHeight;
-
-            // Hauteur d'un bloc jour
-            const daySpacing = 4;
-            const dayHeight = (availablePageHeight / daysInPage) - daySpacing;
-
-            let yPos = headerOverallHeight;
-
-            week.forEach(day => {
-                // Box principale du jour
-                doc.setDrawColor(200, 200, 200);
-                doc.setLineWidth(0.2);
-                doc.setFillColor(255, 255, 255);
-                doc.rect(margin, yPos, contentWidth, dayHeight, 'S');
-
-                // En-tête du jour (Date)
-                const dayHeaderHeight = 7;
-                doc.setFillColor(245, 247, 249);
-                doc.rect(margin, yPos, contentWidth, dayHeaderHeight, 'F');
-                doc.line(margin, yPos + dayHeaderHeight, margin + contentWidth, yPos + dayHeaderHeight);
-
-                doc.setFontSize(9);
-                doc.setTextColor(40, 40, 40);
-                doc.setFont("helvetica", "bold");
-                const dayLabel = day.date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-                doc.text(dayLabel.toUpperCase(), margin + 3, yPos + 5);
-
-                doc.setFontSize(8);
-                doc.text(`Jour ${day.cycleDay || '-'}`, margin + contentWidth - 3, yPos + 5, { align: "right" });
-
-                // Contenu du jour (Périodes en GRILLE comme l'aperçu)
-                if (day.holiday) {
-                    doc.setFontSize(11);
-                    doc.setTextColor(220, 53, 69);
-                    doc.text(day.holiday.label, margin + (contentWidth / 2), yPos + (dayHeight / 2) + 3, { align: "center" });
-                } else if (day.periods.length > 0) {
-                    const availableWidthForContent = contentWidth;
-                    const availableHeightForPeriods = dayHeight - dayHeaderHeight;
-
-                    // Déterminer le nombre de colonnes (2 par défaut si assez de place, sinon 1)
-                    const numCols = (orientation === 'l' || contentWidth > 150) ? 2 : 1;
-                    const numRows = Math.ceil(day.periods.length / numCols);
-
-                    const colWidth = availableWidthForContent / numCols;
-                    const rowHeight = availableHeightForPeriods / numRows;
-
-                    day.periods.forEach((p, pIdx) => {
-                        const col = pIdx % numCols;
-                        const row = Math.floor(pIdx / numCols);
-
-                        const px = margin + (col * colWidth);
-                        const py = yPos + dayHeaderHeight + (row * rowHeight);
-
-                        // Bordures de la cellule de période
-                        doc.setDrawColor(230, 230, 230);
-                        if (col > 0) doc.line(px, py, px, py + rowHeight);
-                        if (row > 0) doc.line(px, py, px + colWidth, py);
-
-                        // Couleur du sujet
-                        let color = (window.agendaData.colors && window.agendaData.colors[p.subject]) ? window.agendaData.colors[p.subject] : '#cccccc';
-                        const r = parseInt(color.slice(1, 3), 16) || 200;
-                        const g = parseInt(color.slice(3, 5), 16) || 200;
-                        const b = parseInt(color.slice(5, 7), 16) || 200;
-
-                        // Barre de couleur en haut de la période
-                        doc.setFillColor(r, g, b);
-                        doc.rect(px, py, colWidth, 1.5, 'F');
-
-                        // En-tête de période (Numéro + Titre)
-                        doc.setFont("helvetica", "bold");
-                        doc.setFontSize(8);
-                        doc.setTextColor(51, 51, 51);
-                        doc.text(`P${p.number}`, px + 2, py + 5);
-
-                        doc.setFontSize(8);
-                        const subjectText = p.subject?.substring(0, 25) || '---';
-                        doc.text(subjectText, px + 8, py + 5);
-
-                        // Lignes de notes
-                        doc.setDrawColor(240, 240, 240);
-                        const notesStartY = py + 7.5;
-                        const notesLineGap = 5; // Plus serré pour les notes pour gagner de la place
-                        for (let h = 0; h < rowHeight - 9; h += notesLineGap) {
-                            doc.line(px + 2, notesStartY + h, px + colWidth - 2, notesStartY + h);
-                        }
-                    });
-                } else {
-                    doc.setFontSize(9);
-                    doc.setTextColor(150, 150, 150);
-                    doc.setFont("helvetica", "italic");
-                    doc.text("Aucun cours prévu", margin + (contentWidth / 2), yPos + (dayHeight / 2) + 3, { align: "center" });
-                }
-
-                yPos += dayHeight + daySpacing;
-            });
+        // Helper: Charger une image
+        const loadImage = (url) => new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = url;
         });
 
-        // Sauvegarde du fichier
-        const fileName = `Agenda_${config.year || 'Scolaire'}.pdf`.replace(/[^a-z0-9_\-\.]/gi, '_');
-        doc.save(fileName);
+        // Helper: Dessiner un footer standard
+        const drawFooter = (d, pageNum, totalPages) => {
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Page ${pageNum}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        };
+
+        // --- 1. PAGE DE COUVERTURE ---
+        try {
+            const coverImg = await loadImage('cover.png');
+            doc.addImage(coverImg, 'PNG', 0, 0, pageWidth, pageHeight);
+
+            // Bandeau de titre blanc semi-transparent ou propre
+            doc.setFillColor(255, 255, 255);
+            doc.rect(0, pageHeight * 0.75, pageWidth, 25, 'F');
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(40);
+            doc.text("Tournesol", margin + 5, pageHeight * 0.81);
+
+            doc.setFontSize(30);
+            doc.text(config.year || "2025-2026", pageWidth - margin - 5, pageHeight * 0.81, { align: 'right' });
+        } catch (e) {
+            console.warn("Image de couverture manquante", e);
+            doc.setFontSize(40);
+            doc.text("AGENDA", pageWidth / 2, pageHeight / 2, { align: 'center' });
+        }
+
+        // --- 2. PAGES INTERCALAIRES (Optionnel mais joli) ---
+        doc.addPage();
+        // Page de points (Bullet journal style)
+        for (let x = 10; x < pageWidth; x += 10) {
+            for (let y = 10; y < pageHeight; y += 10) {
+                doc.setFillColor(200, 200, 200);
+                doc.circle(x, y, 0.2, 'F');
+            }
+        }
+
+        // --- 3. GRILLE HORAIRE TYPE (20 Périodes) ---
+        doc.addPage();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(100, 100, 100);
+        doc.text("HORAIRE TYPE DU CYCLE", margin, 15);
+
+        const cycleDays = config.cycleDays || 9;
+        const periodsPerDay = config.periodsPerDay || 4;
+
+        const tableTop = 25;
+        const colWidth = (pageWidth - (margin * 2)) / (cycleDays + 1);
+        const rowHeight = (pageHeight - tableTop - 20) / periodsPerDay;
+
+        // En-têtes
+        doc.setFontSize(9);
+        doc.setFillColor(240, 235, 220);
+        doc.rect(margin, tableTop, pageWidth - (margin * 2), 7, 'F');
+        for (let i = 1; i <= cycleDays; i++) {
+            doc.text(`${i}`, margin + (i * colWidth) + (colWidth / 2), tableTop + 5, { align: 'center' });
+        }
+
+        // Cellules
+        for (let p = 1; p <= periodsPerDay; p++) {
+            const y = tableTop + 7 + ((p - 1) * rowHeight);
+            doc.setFont("helvetica", "bold");
+            doc.text(`P${p}`, margin + (colWidth / 2), y + (rowHeight / 2), { align: 'center' });
+
+            for (let d = 1; d <= cycleDays; d++) {
+                const x = margin + (d * colWidth);
+                doc.setDrawColor(230, 220, 200);
+                doc.rect(x, y, colWidth, rowHeight, 'S');
+
+                const sched = window.agendaData.schedule[`${d}-${p}`];
+                if (sched && sched.subject) {
+                    const color = window.agendaData.colors[sched.subject] || '#cccccc';
+                    const r = parseInt(color.slice(1, 3), 16);
+                    const g = parseInt(color.slice(3, 5), 16);
+                    const b = parseInt(color.slice(5, 7), 16);
+                    doc.setFillColor(r, g, b);
+                    doc.rect(x + 0.5, y + 0.5, colWidth - 1, 2, 'F');
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(7);
+                    doc.text(sched.subject.substring(0, 12), x + (colWidth / 2), y + (rowHeight / 2) + 2, { align: 'center' });
+                }
+            }
+        }
+
+        // --- 4. PAGES D'AGENDA HEBDOMADAIRE ---
+        const agenda = Calendar.generateFullAgenda(window.agendaData);
+        const weekdayAgenda = agenda.filter(d => !d.isWeekend);
+        const weeks = Calendar.groupAgendaByWeek(weekdayAgenda, config.daysPerPage || 5);
+
+        for (const week of weeks) {
+            doc.addPage();
+
+            // Header: Mois
+            const monthName = week[0].date.toLocaleDateString('fr-FR', { month: 'long' });
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(24);
+            doc.setTextColor(212, 160, 23); // Yellow
+            doc.text(monthName.toUpperCase(), margin, 20);
+
+            // Déco
+            try {
+                const decoImg = await loadImage('decoration.png');
+                doc.addImage(decoImg, 'PNG', pageWidth - 60, 5, 50, 50);
+            } catch (e) { }
+
+            let xPos = margin;
+            const dayWidth = (pageWidth - (margin * 2) - 40) / week.length; // 40mm pour la sidebar
+
+            week.forEach((day, i) => {
+                const dx = margin + (i * dayWidth);
+
+                // Date Bubble
+                doc.setFillColor(253, 245, 230);
+                doc.roundedRect(dx + 2, 30, dayWidth - 4, 15, 5, 5, 'F');
+
+                doc.setTextColor(184, 134, 11);
+                doc.setFontSize(14);
+                doc.text(day.date.getDate().toString(), dx + (dayWidth / 2), 38, { align: 'center' });
+                doc.setFontSize(8);
+                doc.text(day.date.toLocaleDateString('fr-FR', { weekday: 'long' }).toUpperCase(), dx + (dayWidth / 2), 43, { align: 'center' });
+
+                // Grille de périodes
+                const pTop = 50;
+                const pHeight = (pageHeight - pTop - 20) / (day.periods.length || 1);
+
+                day.periods.forEach((p, pi) => {
+                    const py = pTop + (pi * pHeight);
+                    doc.setDrawColor(240, 230, 210);
+                    doc.rect(dx, py, dayWidth, pHeight, 'S');
+
+                    if (p.subject) {
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(7);
+                        doc.text(`P${p.number}: ${p.subject}`, dx + 2, py + 4);
+                    }
+
+                    // Lignes de notes
+                    doc.setDrawColor(245, 240, 230);
+                    for (let ly = py + 8; ly < py + pHeight - 2; ly += 6) {
+                        doc.line(dx + 2, ly, dx + dayWidth - 2, ly);
+                    }
+                });
+            });
+
+            // Sidebar Note (Example: Cork style or colored box)
+            const sidebarX = pageWidth - margin - 35;
+            doc.setFillColor(250, 240, 220);
+            doc.roundedRect(sidebarX, 50, 35, 150, 5, 5, 'F');
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text("NOTES", sidebarX + 17.5, 60, { align: 'center' });
+        }
+
+        doc.save(`Agenda_Tournesol_${config.year || '2025'}.pdf`);
 
     } catch (error) {
-        console.error("Erreur critique PDF:", error);
-        alert("Erreur technique: " + error.message);
+        console.error(error);
+        alert("Erreur: " + error.message);
     }
 });

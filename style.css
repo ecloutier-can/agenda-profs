@@ -1,16 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-    --primary-color: #197fe6;
-    --primary-light: #e8f2fe;
-    --secondary-color: #6c757d;
-    --bg-color: #f8f9fa;
+    --primary-color: #d4a017;
+    /* Sunflower Yellow */
+    --primary-dark: #b8860b;
+    --primary-light: #fdf5e6;
+    /* Old Lace */
+    --secondary-color: #8a9a5b;
+    /* Sage Green */
+    --accent-color: #e9967a;
+    /* Dark Salmon */
+    --bg-color: #fdfaf5;
     --card-bg: #ffffff;
-    --text-color: #333333;
-    --text-muted: #666666;
-    --border-color: #e0e0e0;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --radius: 8px;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --text-color: #4a4a4a;
+    --text-muted: #8c8c8c;
+    --border-color: #e8e0d5;
+    --success-color: #6b8e23;
+    --danger-color: #cd5c5c;
+    --radius: 12px;
+    --shadow: 0 8px 15px rgba(212, 160, 23, 0.08);
+    --font-heading: 'Dancing Script', cursive;
+    --font-body: 'Inter', sans-serif;
 }
 
 * {
@@ -20,10 +30,15 @@
 }
 
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-body);
     background-color: var(--bg-color);
     color: var(--text-color);
     line-height: 1.6;
+    background-image: url('decoration.png');
+    background-size: 400px;
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-attachment: fixed;
 }
 
 .container {
@@ -48,8 +63,9 @@ header .container {
 }
 
 h1 {
-    font-size: 1.5rem;
-    color: var(--primary-color);
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    color: var(--primary-dark);
 }
 
 .header-actions {
@@ -79,9 +95,10 @@ section {
 }
 
 h2 {
-    font-size: 1.1rem;
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
     margin-bottom: 1rem;
-    color: var(--primary-color);
+    color: var(--primary-dark);
 }
 
 .section-desc {
@@ -127,26 +144,34 @@ select {
 .btn-primary {
     background-color: var(--primary-color);
     color: white;
+    box-shadow: 0 4px 10px rgba(212, 160, 23, 0.3);
 }
 
 .btn-primary:hover {
-    background-color: #1565c0;
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
 }
 
 .btn-secondary {
-    background-color: var(--primary-light);
-    color: var(--primary-color);
+    background-color: var(--secondary-color);
+    color: white;
     width: 100%;
 }
 
+.btn-secondary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
 .btn-outline {
-    background-color: transparent;
+    background-color: white;
     border: 1px solid var(--border-color);
     color: var(--text-color);
 }
 
 .btn-outline:hover {
-    background-color: #f0f0f0;
+    background-color: var(--primary-light);
+    border-color: var(--primary-color);
 }
 
 /* Tabs */
@@ -227,7 +252,7 @@ select {
 .week-preview-container {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
 }
 
 .preview-day-card {
@@ -235,24 +260,27 @@ select {
     border-radius: var(--radius);
     overflow: hidden;
     background: white;
+    box-shadow: var(--shadow);
 }
 
 .preview-day-card.has-holiday {
-    border-left: 5px solid var(--danger-color);
+    border-left: 8px solid var(--danger-color);
 }
 
 .preview-day-header {
     background-color: var(--primary-light);
-    padding: 0.8rem 1.2rem;
+    padding: 1rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 2px solid var(--border-color);
 }
 
 .day-name {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
     font-weight: 700;
-    color: var(--primary-color);
+    color: var(--primary-dark);
     text-transform: capitalize;
 }
 
@@ -260,44 +288,53 @@ select {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    background: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
 }
 
 .correction-select {
     width: auto;
-    padding: 0.2rem 0.5rem;
-    font-weight: 600;
-    border-color: var(--primary-color);
+    padding: 0.1rem 0.4rem;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: var(--primary-dark);
 }
 
 .preview-day-body {
-    padding: 1.2rem;
+    padding: 1.5rem;
 }
 
 .preview-holiday-banner {
-    padding: 0.5rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 700;
+    font-size: 1rem;
     text-align: center;
+    border: 1px solid transparent;
 }
 
 .preview-holiday-banner.conge {
-    background-color: #fce4ec;
-    color: #c2185b;
+    background-color: #fff0f0;
+    color: var(--danger-color);
+    border-color: #ffdada;
 }
 
 .preview-holiday-banner.pedago {
-    background-color: #e8f5e9;
-    color: #2e7d32;
+    background-color: #f0f7f0;
+    color: var(--success-color);
+    border-color: #d0e7d0;
 }
 
 .preview-periods {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .preview-period {
@@ -307,47 +344,52 @@ select {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 120px;
+    min-height: 150px;
     position: relative;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.preview-period:hover {
+    transform: scale(1.02);
 }
 
 .p-header {
-    padding: 0.5rem;
+    padding: 0.8rem;
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    border-bottom: 1px solid #f0f0f0;
+    background-color: #fafaf8;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .p-num {
     font-weight: 800;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    background: #f0f0f0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    font-size: 0.8rem;
+    color: white;
+    background: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: 6px;
 }
 
 .p-subject {
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: var(--text-color);
 }
 
 .p-color-bar {
-    height: 6px;
+    height: 4px;
     width: 100%;
 }
 
 .p-notes-body {
     flex-grow: 1;
-    padding: 0.5rem;
+    padding: 1rem;
     background-image: repeating-linear-gradient(transparent,
-            transparent 19px,
-            #eee 19px,
-            #eee 20px);
-    background-size: 100% 20px;
+            transparent 24px,
+            #f0eee4 24px,
+            #f0eee4 25px);
+    background-size: 100% 25px;
 }
 
 .preview-notes-area {

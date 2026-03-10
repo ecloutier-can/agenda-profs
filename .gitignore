@@ -1,0 +1,14 @@
+# Exlusions Git pour Agenda Prof
+
+# Exemples et modèles (Inspiration seulement)
+"Planificateur Tournesol 2025-2026 2 1.pdf"
+
+# Actifs générés (peuvent être régénérés ou stockés ailleurs)
+# cover.png
+# decoration.png
+
+# Dossiers système
+.DS_Store
+node_modules/
+dist/
+.env

@@ -167,18 +167,19 @@ function renderAgendaPreview() {
                 </div>
                 <div class="preview-day-body">
                     ${day.holiday ? `<div class="preview-holiday-banner ${day.holiday.type}">${day.holiday.label}</div>` : ''}
-                    <div class="preview-periods">
+                    <div class="preview-periods" style="grid-template-columns: repeat(auto-fill, minmax(${day.periods.length > 10 ? '140px' : '280px'}, 1fr))">
                         ${day.periods.length > 0 ? day.periods.map(p => {
             const color = window.agendaData.colors[p.subject] || '#f1f3f4';
             const isColored = !!window.agendaData.colors[p.subject];
+            const isCompact = day.periods.length > 10;
             return `
-                                <div class="preview-period" style="border-top: 4px solid ${isColored ? color : '#ccc'}; min-height: ${window.agendaData.config.notesHeight || 30}mm">
-                                    <div class="p-header">
-                                        <span class="p-num">P${p.number}</span>
-                                        <span class="p-subject">${p.subject || '---'}</span>
+                                <div class="preview-period" style="border-top: 4px solid ${isColored ? color : '#ccc'}; min-height: ${isCompact ? '60px' : (window.agendaData.config.notesHeight || 30) + 'mm'}">
+                                    <div class="p-header" style="${isCompact ? 'padding: 0.3rem;' : ''}">
+                                        <span class="p-num" style="${isCompact ? 'font-size: 0.65rem;' : ''}">P${p.number}</span>
+                                        <span class="p-subject" style="${isCompact ? 'font-size: 0.75rem;' : ''}">${p.subject || '---'}</span>
                                     </div>
-                                    <div class="p-color-bar" style="background-color: ${isColored ? color + '44' : 'transparent'}"></div>
-                                    <div class="p-notes-body"></div>
+                                    ${!isCompact ? '<div class="p-color-bar" style="background-color: ' + (isColored ? color + '22' : 'transparent') + '"></div>' : ''}
+                                    ${!isCompact ? '<div class="p-notes-body"></div>' : ''}
                                 </div>
                             `;
         }).join('') : '<div class="no-periods">Aucun cours prévu</div>'}
