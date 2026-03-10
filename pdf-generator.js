@@ -95,97 +95,102 @@ document.getElementById('btn-generate-pdf').addEventListener('click', async () =
             doc.line(margin, 18, pageWidth - margin, 18);
 
             const daysInPage = week.length;
-            const headerHeight = 22;
+            const headerOverallHeight = 22;
             const footerHeight = 10;
-            const availablePageHeight = pageHeight - headerHeight - footerHeight;
+            const availablePageHeight = pageHeight - headerOverallHeight - footerHeight;
 
-            // Calculer la hauteur d'un bloc jour
-            // On essaie de respecter config.notesHeight (qui est par période)
-            const periodsPerDay = config.periodsPerDay || 1;
-            const dayHeaderHeight = 8;
-            const requestedDayHeight = dayHeaderHeight + (periodsPerDay * (config.notesHeight || 30));
+            // Hauteur d'un bloc jour
+            const daySpacing = 4;
+            const dayHeight = (availablePageHeight / daysInPage) - daySpacing;
 
-            // Mais on doit faire tenir X jours par page
-            const maxDayHeight = (availablePageHeight / daysInPage) - 2;
-            const dayHeight = Math.min(requestedDayHeight, maxDayHeight);
-
-            let yPos = headerHeight;
+            let yPos = headerOverallHeight;
 
             week.forEach(day => {
-                // Box pour le jour
+                // Box principale du jour
                 doc.setDrawColor(200, 200, 200);
                 doc.setLineWidth(0.2);
-                doc.setFillColor(245, 247, 249);
-                doc.rect(margin, yPos, contentWidth, dayHeight, 'F');
+                doc.setFillColor(255, 255, 255);
                 doc.rect(margin, yPos, contentWidth, dayHeight, 'S');
 
                 // En-tête du jour (Date)
-                doc.setFillColor(230, 235, 240);
+                const dayHeaderHeight = 7;
+                doc.setFillColor(245, 247, 249);
                 doc.rect(margin, yPos, contentWidth, dayHeaderHeight, 'F');
-                doc.rect(margin, yPos, contentWidth, dayHeaderHeight, 'S');
+                doc.line(margin, yPos + dayHeaderHeight, margin + contentWidth, yPos + dayHeaderHeight);
 
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 doc.setTextColor(40, 40, 40);
                 doc.setFont("helvetica", "bold");
                 const dayLabel = day.date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-                doc.text(dayLabel.toUpperCase(), margin + 3, yPos + 5.5);
+                doc.text(dayLabel.toUpperCase(), margin + 3, yPos + 5);
 
-                doc.setFontSize(9);
-                doc.text(`Jour ${day.cycleDay || '-'}`, margin + contentWidth - 5, yPos + 5.5, { align: "right" });
+                doc.setFontSize(8);
+                doc.text(`Jour ${day.cycleDay || '-'}`, margin + contentWidth - 3, yPos + 5, { align: "right" });
 
-                // Contenu du jour
+                // Contenu du jour (Périodes en GRILLE comme l'aperçu)
                 if (day.holiday) {
-                    doc.setFontSize(12);
+                    doc.setFontSize(11);
                     doc.setTextColor(220, 53, 69);
-                    doc.setFont("helvetica", "bold");
-                    doc.text(day.holiday.label, margin + (contentWidth / 2), yPos + (dayHeight / 2) + 2, { align: "center" });
+                    doc.text(day.holiday.label, margin + (contentWidth / 2), yPos + (dayHeight / 2) + 3, { align: "center" });
                 } else if (day.periods.length > 0) {
+                    const availableWidthForContent = contentWidth;
                     const availableHeightForPeriods = dayHeight - dayHeaderHeight;
-                    const periodBoxHeight = availableHeightForPeriods / day.periods.length;
 
-                    let currentY = yPos + dayHeaderHeight;
+                    // Déterminer le nombre de colonnes (2 par défaut si assez de place, sinon 1)
+                    const numCols = (orientation === 'l' || contentWidth > 150) ? 2 : 1;
+                    const numRows = Math.ceil(day.periods.length / numCols);
+
+                    const colWidth = availableWidthForContent / numCols;
+                    const rowHeight = availableHeightForPeriods / numRows;
 
                     day.periods.forEach((p, pIdx) => {
+                        const col = pIdx % numCols;
+                        const row = Math.floor(pIdx / numCols);
+
+                        const px = margin + (col * colWidth);
+                        const py = yPos + dayHeaderHeight + (row * rowHeight);
+
+                        // Bordures de la cellule de période
+                        doc.setDrawColor(230, 230, 230);
+                        if (col > 0) doc.line(px, py, px, py + rowHeight);
+                        if (row > 0) doc.line(px, py, px + colWidth, py);
+
+                        // Couleur du sujet
                         let color = (window.agendaData.colors && window.agendaData.colors[p.subject]) ? window.agendaData.colors[p.subject] : '#cccccc';
-                        if (!color.startsWith('#')) color = '#cccccc';
                         const r = parseInt(color.slice(1, 3), 16) || 200;
                         const g = parseInt(color.slice(3, 5), 16) || 200;
                         const b = parseInt(color.slice(5, 7), 16) || 200;
 
-                        // Petite barre de couleur à gauche de la période
+                        // Barre de couleur en haut de la période
                         doc.setFillColor(r, g, b);
-                        doc.rect(margin + 0.5, currentY + 0.5, 3, periodBoxHeight - 1, 'F');
+                        doc.rect(px, py, colWidth, 1.5, 'F');
 
-                        // Texte de la période
+                        // En-tête de période (Numéro + Titre)
                         doc.setFont("helvetica", "bold");
-                        doc.setFontSize(9);
+                        doc.setFontSize(8);
                         doc.setTextColor(51, 51, 51);
-                        doc.text(`P${p.number}: ${p.subject || '---'}`, margin + 6, currentY + 4.5);
+                        doc.text(`P${p.number}`, px + 2, py + 5);
+
+                        doc.setFontSize(8);
+                        const subjectText = p.subject?.substring(0, 25) || '---';
+                        doc.text(subjectText, px + 8, py + 5);
 
                         // Lignes de notes
-                        doc.setDrawColor(230, 230, 230);
-                        const notesStartY = currentY + 7;
-                        const notesLineGap = 6;
-                        for (let h = 0; h < periodBoxHeight - 8; h += notesLineGap) {
-                            doc.line(margin + 6, notesStartY + h, margin + contentWidth - 3, notesStartY + h);
+                        doc.setDrawColor(240, 240, 240);
+                        const notesStartY = py + 7.5;
+                        const notesLineGap = 5; // Plus serré pour les notes pour gagner de la place
+                        for (let h = 0; h < rowHeight - 9; h += notesLineGap) {
+                            doc.line(px + 2, notesStartY + h, px + colWidth - 2, notesStartY + h);
                         }
-
-                        // Ligne de séparation entre périodes si pas la dernière
-                        if (pIdx < day.periods.length - 1) {
-                            doc.setDrawColor(220, 220, 220);
-                            doc.line(margin, currentY + periodBoxHeight, margin + contentWidth, currentY + periodBoxHeight);
-                        }
-
-                        currentY += periodBoxHeight;
                     });
                 } else {
-                    doc.setFontSize(10);
+                    doc.setFontSize(9);
                     doc.setTextColor(150, 150, 150);
                     doc.setFont("helvetica", "italic");
-                    doc.text("Aucun cours prévu", margin + (contentWidth / 2), yPos + (dayHeight / 2) + 2, { align: "center" });
+                    doc.text("Aucun cours prévu", margin + (contentWidth / 2), yPos + (dayHeight / 2) + 3, { align: "center" });
                 }
 
-                yPos += dayHeight + 2;
+                yPos += dayHeight + daySpacing;
             });
         });
 
@@ -195,6 +200,6 @@ document.getElementById('btn-generate-pdf').addEventListener('click', async () =
 
     } catch (error) {
         console.error("Erreur critique PDF:", error);
-        alert("Une erreur technique empêche la génération du PDF. Consultez la console (F12) pour plus de détails.\nErreur: " + error.message);
+        alert("Erreur technique: " + error.message);
     }
 });
