@@ -144,7 +144,7 @@ select {
 .btn-primary {
     background-color: var(--primary-color);
     color: white;
-    box-shadow: 0 4px 10px rgba(212, 160, 23, 0.3);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {

@@ -13,7 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
         schedule: {},   // { "day-period": { subject, room, group } }
         holidays: [],   // [ { date, label, type } ]
         colors: {},     // { subjectName: hexColor }
-        corrections: {} // { dateStr: manualCycleDay }
+        corrections: {}, // { dateStr: manualCycleDay }
+        theme: {
+            primary: '#d4a017',
+            secondary: '#8a9a5b',
+            bg: '#fdfaf5'
+        }
     };
 
 
@@ -200,8 +205,63 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAgendaPreview();
     };
 
+    // Gestion du thème
+    const primaryInput = document.getElementById('color-primary');
+    const secondaryInput = document.getElementById('color-secondary');
+    const bgInput = document.getElementById('color-bg');
+
+    function updateTheme(key, value) {
+        window.agendaData.theme[key] = value;
+        document.documentElement.style.setProperty(`--${key}-color`, value);
+        if (key === 'primary') {
+            document.documentElement.style.setProperty('--primary-dark', shadeColor(value, -20));
+        }
+        const span = document.querySelector(`#color-${key} + .color-val`);
+        if (span) span.textContent = value.toUpperCase();
+        saveToLocal();
+    }
+
+    primaryInput.addEventListener('input', (e) => updateTheme('primary', e.target.value));
+    secondaryInput.addEventListener('input', (e) => updateTheme('secondary', e.target.value));
+    bgInput.addEventListener('input', (e) => updateTheme('bg', e.target.value));
+
+    function applyThemeToUI() {
+        const theme = window.agendaData.theme;
+        Object.entries(theme).forEach(([key, value]) => {
+            document.documentElement.style.setProperty(`--${key}-color`, value);
+            if (key === 'primary') {
+                document.documentElement.style.setProperty('--primary-dark', shadeColor(value, -20));
+            }
+            const input = document.getElementById(`color-${key}`);
+            const span = document.querySelector(`#color-${key} + .color-val`);
+            if (input) input.value = value;
+            if (span) span.textContent = value.toUpperCase();
+        });
+    }
+
+    function shadeColor(color, percent) {
+        let R = parseInt(color.substring(1, 3), 16);
+        let G = parseInt(color.substring(3, 5), 16);
+        let B = parseInt(color.substring(5, 7), 16);
+
+        R = parseInt(R * (100 + percent) / 100);
+        G = parseInt(G * (100 + percent) / 100);
+        B = parseInt(B * (100 + percent) / 100);
+
+        R = (R < 255) ? R : 255;
+        G = (G < 255) ? G : 255;
+        B = (B < 255) ? B : 255;
+
+        const RR = ((R.toString(16).length === 1) ? "0" + R.toString(16) : R.toString(16));
+        const GG = ((G.toString(16).length === 1) ? "0" + G.toString(16) : G.toString(16));
+        const BB = ((B.toString(16).length === 1) ? "0" + B.toString(16) : B.toString(16));
+
+        return "#" + RR + GG + BB;
+    }
+
     // Initialisation
     loadFromLocal();
+    applyThemeToUI();
     renderHoraireGrid();
     renderEventList();
     renderLegendList();

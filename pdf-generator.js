@@ -15,6 +15,19 @@ document.getElementById('btn-generate-pdf').addEventListener('click', async () =
 
         const { jsPDF } = window.jspdf;
         const config = window.agendaData.config;
+        const theme = window.agendaData.theme || { primary: '#d4a017', secondary: '#8a9a5b', bg: '#fdfaf5' };
+
+        const hexToRgb = (hex) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return { r, g, b };
+        };
+
+        const primaryRgb = hexToRgb(theme.primary);
+        const secondaryRgb = hexToRgb(theme.secondary);
+        const bgRgb = hexToRgb(theme.bg);
+
         const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
         const pageWidth = doc.internal.pageSize.getWidth();
@@ -130,7 +143,7 @@ document.getElementById('btn-generate-pdf').addEventListener('click', async () =
             const monthName = week[0].date.toLocaleDateString('fr-FR', { month: 'long' });
             doc.setFont("helvetica", "bold");
             doc.setFontSize(24);
-            doc.setTextColor(212, 160, 23); // Yellow
+            doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
             doc.text(monthName.toUpperCase(), margin, 20);
 
             // Déco
@@ -146,10 +159,10 @@ document.getElementById('btn-generate-pdf').addEventListener('click', async () =
                 const dx = margin + (i * dayWidth);
 
                 // Date Bubble
-                doc.setFillColor(253, 245, 230);
+                doc.setFillColor(bgRgb.r, bgRgb.g, bgRgb.b);
                 doc.roundedRect(dx + 2, 30, dayWidth - 4, 15, 5, 5, 'F');
 
-                doc.setTextColor(184, 134, 11);
+                doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
                 doc.setFontSize(14);
                 doc.text(day.date.getDate().toString(), dx + (dayWidth / 2), 38, { align: 'center' });
                 doc.setFontSize(8);
@@ -187,7 +200,8 @@ document.getElementById('btn-generate-pdf').addEventListener('click', async () =
             doc.text("NOTES", sidebarX + 17.5, 60, { align: 'center' });
         }
 
-        doc.save(`Agenda_Tournesol_${config.year || '2025'}.pdf`);
+        const fileName = config.title ? `agenda_${config.title.toLowerCase().replace(/\s+/g, '_')}` : 'agenda_enseignant';
+        doc.save(`${fileName}.pdf`);
 
     } catch (error) {
         console.error(error);
