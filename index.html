@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'Agenda Scolaire</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>Générateur d'Agenda Scolaire</h1>
+            <div class="header-actions">
+                <button id="btn-import" class="btn-outline">Importer (.agenda)</button>
+                <button id="btn-export" class="btn-outline">Exporter (.agenda)</button>
+                <button id="btn-generate-pdf" class="btn-primary">Générer le PDF</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <aside class="sidebar">
+            <section class="config-section">
+                <h2>1. Configuration Générale</h2>
+                <div class="form-group">
+                    <label for="school-year">Année Scolaire</label>
+                    <input type="text" id="school-year" placeholder="ex: 2023-2024">
+                </div>
+                <div class="form-group">
+                    <label for="start-date">Date de début</label>
+                    <input type="date" id="start-date">
+                </div>
+                <div class="form-group">
+                    <label for="end-date">Date de fin</label>
+                    <input type="date" id="end-date">
+                </div>
+                <div class="form-group">
+                    <label for="cycle-days">Jours dans le cycle</label>
+                    <select id="cycle-days">
+                        <option value="5">5 jours</option>
+                        <option value="9">9 jours</option>
+                        <option value="10">10 jours</option>
+                        <option value="12">12 jours</option>
+                        <option value="15">15 jours</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="periods-per-day">Périodes par jour</label>
+                    <input type="number" id="periods-per-day" value="4" min="1" max="10">
+                </div>
+                <div class="form-group">
+                    <label for="days-per-page">Jours par page (PDF/Aperçu)</label>
+                    <select id="days-per-page">
+                        <option value="1">1 jour</option>
+                        <option value="2">2 jours</option>
+                        <option value="3">3 jours</option>
+                        <option value="4">4 jours</option>
+                        <option value="5" selected>5 jours (Sém. ouv.)</option>
+                        <option value="7">7 jours (Sém. compl.)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="page-orientation">Orientation</label>
+                    <select id="page-orientation">
+                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Paysage</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="notes-height">Espace de notes (mm)</label>
+                    <input type="range" id="notes-height" min="10" max="100" value="30" step="5">
+                    <span id="notes-height-val">30 mm</span>
+                </div>
+                <button id="btn-apply-config" class="btn-primary" style="width:100%; margin-top: 0.5rem;">Enregistrer &
+                    Actualiser</button>
+            </section>
+
+            <section class="events-section">
+                <h2>2. Calendrier & Événements</h2>
+                <p class="section-desc">Gérez les congés et les journées pédagogiques.</p>
+                <div id="event-list" class="event-list">
+                    <!-- Les événements seront listés ici -->
+                </div>
+                <button id="btn-add-event" class="btn-secondary">Ajouter un événement</button>
+            </section>
+
+            <section class="legend-section">
+                <h2>3. Couleurs & Légende</h2>
+                <div id="legend-list" class="legend-list">
+                    <!-- La légende sera listée ici -->
+                </div>
+                <button id="btn-add-legend" class="btn-secondary">Ajouter une catégorie</button>
+            </section>
+        </aside>
+
+        <section class="main-content">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="horaire">Horaire du Cycle</button>
+                <button class="tab-btn" data-tab="aperçu">Aperçu de l'Agenda</button>
+            </div>
+
+            <div id="tab-horaire" class="tab-content active">
+                <div class="horaire-header">
+                    <h2>Configuration de l'Horaire Type</h2>
+                    <p>Définissez vos cours pour un cycle complet.</p>
+                </div>
+                <div id="horaire-grid" class="horaire-grid">
+                    <!-- Grille d'horaire générée dynamiquement -->
+                </div>
+            </div>
+
+            <div id="tab-aperçu" class="tab-content">
+                <div class="aperçu-header">
+                    <h2>Aperçu des Semaines</h2>
+                    <div class="pagination">
+                        <button id="prev-week" class="btn-icon">←</button>
+                        <span id="current-week-label">Semaine 1</span>
+                        <button id="next-week" class="btn-icon">→</button>
+                    </div>
+                </div>
+                <div id="agenda-preview" class="agenda-preview">
+                    <!-- Aperçu de la semaine généré dynamiquement -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modales -->
+    <div id="modal-event" class="modal">
+        <div class="modal-content">
+            <h3>Ajouter un événement</h3>
+            <div class="form-group">
+                <label for="event-date">Date</label>
+                <input type="date" id="event-date">
+            </div>
+            <div class="form-group">
+                <label for="event-title">Titre</label>
+                <input type="text" id="event-title">
+            </div>
+            <div class="form-group">
+                <label for="event-type">Type</label>
+                <select id="event-type">
+                    <option value="conge">Congé / Fermé</option>
+                    <option value="pedago">Journée Pédagogique (Pas de cycle)</option>
+                    <option value="evenement">Événement spécial (Cycle normal)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button id="btn-cancel-event" class="btn-outline">Annuler</button>
+                <button id="btn-save-event" class="btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="storage.js"></script>
+    <script src="calendar.js"></script>
+    <script src="pdf-generator.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
