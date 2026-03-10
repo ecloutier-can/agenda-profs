@@ -206,27 +206,34 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Gestion du thème
-    const primaryInput = document.getElementById('color-primary');
-    const secondaryInput = document.getElementById('color-secondary');
-    const bgInput = document.getElementById('color-bg');
+    const btnApplyTheme = document.getElementById('btn-apply-theme');
 
-    function updateTheme(key, value) {
-        window.agendaData.theme[key] = value;
-        document.documentElement.style.setProperty(`--${key}-color`, value);
-        if (key === 'primary') {
-            document.documentElement.style.setProperty('--primary-dark', shadeColor(value, -20));
-        }
-        const span = document.querySelector(`#color-${key} + .color-val`);
-        if (span) span.textContent = value.toUpperCase();
+    btnApplyTheme.addEventListener('click', () => {
+        const theme = {
+            primary: document.getElementById('color-primary').value,
+            secondary: document.getElementById('color-secondary').value,
+            bg: document.getElementById('color-bg').value
+        };
+
+        window.agendaData.theme = theme;
+        applyThemeToUI();
         saveToLocal();
-    }
+        alert("Design mis à jour !");
+    });
 
-    primaryInput.addEventListener('input', (e) => updateTheme('primary', e.target.value));
-    secondaryInput.addEventListener('input', (e) => updateTheme('secondary', e.target.value));
-    bgInput.addEventListener('input', (e) => updateTheme('bg', e.target.value));
+    // Update color indicator text on change (before apply)
+    ['primary', 'secondary', 'bg'].forEach(key => {
+        const input = document.getElementById(`color-${key}`);
+        if (input) {
+            input.addEventListener('input', (e) => {
+                const span = document.querySelector(`#color-${key} + .color-val`);
+                if (span) span.textContent = e.target.value.toUpperCase();
+            });
+        }
+    });
 
     function applyThemeToUI() {
-        const theme = window.agendaData.theme;
+        const theme = window.agendaData.theme || { primary: '#d4a017', secondary: '#8a9a5b', bg: '#fdfaf5' };
         Object.entries(theme).forEach(([key, value]) => {
             document.documentElement.style.setProperty(`--${key}-color`, value);
             if (key === 'primary') {

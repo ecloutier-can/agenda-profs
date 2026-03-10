@@ -141,6 +141,29 @@ select {
     font-size: 0.9rem;
 }
 
+.color-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.color-input-wrapper input[type="color"] {
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    cursor: pointer;
+    background: none;
+}
+
+.color-val {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
 .btn-primary {
     background-color: var(--primary-color);
     color: white;
